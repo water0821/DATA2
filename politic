@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE CAPITAL 2016 | 政治獻金透視</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Noto+Sans+TC:wght@300;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --black: #000; --white: #fff; --gray: #f2f2f2; }
+        body { margin: 0; background: var(--white); color: var(--black); font-family: 'Noto Sans TC', sans-serif; }
+        nav { border-bottom: 2px solid var(--black); padding: 20px 50px; display: flex; justify-content: space-between; letter-spacing: 2px; font-weight: bold; text-transform: uppercase; }
+        .hero { text-align: center; padding: 100px 20px; border-bottom: 2px solid var(--black); }
+        .hero h1 { font-family: 'Playfair Display', serif; font-size: 3.5rem; margin: 0; letter-spacing: 5px; text-transform: uppercase; }
+        .search-container { margin: 40px auto; max-width: 500px; }
+        input { width: 100%; padding: 15px 0; border: none; border-bottom: 2px solid var(--black); font-size: 1.2rem; text-align: center; outline: none; }
+        .cta-button { display: inline-block; margin-top: 30px; padding: 15px 60px; background: var(--black); color: var(--white); text-decoration: none; font-weight: bold; border: 1px solid var(--black); cursor: pointer; }
+        .cta-button:hover { background: var(--white); color: var(--black); }
+        #results-page { display: none; padding: 50px; }
+        .results-header { border-bottom: 4px solid var(--black); padding-bottom: 20px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .data-row { display: flex; justify-content: space-between; padding: 25px 0; border-bottom: 1px solid #ddd; }
+        .name-box h3 { margin: 0; font-size: 1.5rem; }
+        .name-box span { color: #888; font-size: 0.8rem; }
+        .value-box { text-align: right; }
+        .amount { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<nav><div>Archives / 2016</div><div>The Capital</div><div>Explore</div></nav>
+
+<div id="landing-page">
+    <section class="hero">
+        <h1>Political Money</h1>
+        <p><i>Decoding the influence behind the 2016 Legislative Election</i></p>
+        <div class="search-container">
+            <input type="text" id="cityInput" placeholder="輸入縣市 (例如: 台北市)">
+            <button class="cta-button" onclick="showResults()">EXPLORE DATA</button>
+        </div>
+    </section>
+</div>
+
+<div id="results-page">
+    <div class="results-header">
+        <div><h2 id="display-city">RESULTS</h2><p id="quick-summary"></p></div>
+        <button onclick="location.reload()" style="background:none; border:1px solid #00; padding:5px 15px; cursor:pointer;">BACK</button>
+    </div>
+    <div id="data-list"></div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    let rawData = [];
+
+    // 讀取 GitHub 上的 CSV
+    d3.csv("A05_basic_all.csv").then(data => {
+        rawData = data;
+        console.log("CSV Loaded:", rawData.length);
+    });
+
+    function showResults() {
+        const input = document.getElementById('cityInput').value.trim();
+        if (!input) return alert("請輸入縣市名稱");
+
+        document.getElementById('landing-page').style.display = 'none';
+        document.getElementById('results-page').style.display = 'block';
+        document.getElementById('display-city').innerText = input;
+
+        renderData(input);
+    }
+
+    function renderData(filter) {
+        const list = document.getElementById('data-list');
+        list.innerHTML = "";
+        
+        // 篩選與排序
+        const filtered = rawData.filter(d => d.地區 && d.地區.includes(filter))
+                                .sort((a, b) => b.總收入 - a.總收入);
+
+        if (filtered.length === 0) {
+            list.innerHTML = "<h3>查無資料，請確認輸入是否正確（如：臺北市）</h3>";
+            return;
+        }
+
+        filtered.forEach(item => {
+            list.innerHTML += `
+                <div class="data-row">
+                    <div class="name-box">
+                        <span>${item.推薦政黨} / ${item.地區}</span>
+                        <h3>${item.姓名}</h3>
+                    </div>
+                    <div class="value-box">
+                        <div class="amount">$${parseInt(item.總收入 || 0).toLocaleString()}</div>
+                        <div style="font-size:0.8rem; color:#666">企業捐贈: ${item.營利事業捐贈比例 || '0%'}</div>
+                    </div>
+                </div>`;
+        });
+        document.getElementById('quick-summary').innerText = `找到 ${filtered.length} 位候選人`;
+    }
+</script>
+</body>
+</html>
