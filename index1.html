@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE CAPITAL 2016 | Decoding Power</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Helvetica+Neue:wght@300;400;700&display=swap');
+
+        /* --- Chanel Visual Style --- */
+        :root {
+            --black: #000000;
+            --white: #FFFFFF;
+            --border-thick: 2px solid #000000;
+            --border-thin: 1px solid #000000;
+        }
+
+        body {
+            background-color: var(--white);
+            color: var(--black);
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            letter-spacing: 0.05em;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, .serif {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+        }
+
+        /* Header */
+        .main-header {
+            border-bottom: var(--border-thick);
+            text-align: center;
+            padding: 80px 20px 40px;
+        }
+
+        .main-header h1 {
+            font-size: 3.5rem;
+            letter-spacing: 0.15em;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .main-header .subtitle {
+            font-size: 0.85rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            margin-top: 15px;
+        }
+
+        /* Interactive Map Section */
+        .map-section {
+            text-align: center;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            letter-spacing: 0.1em;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .section-subtitle {
+            font-size: 0.75rem;
+            letter-spacing: 0.3em;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .map-container {
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .county {
+            fill: var(--white);
+            stroke: var(--black);
+            stroke-width: 1px;
+            cursor: pointer;
+            transition: fill 0.3s ease;
+        }
+
+        .county:hover, .county.active {
+            fill: var(--black);
+        }
+
+        /* Search Section */
+        .search-section {
+            max-width: 800px;
+            margin: 60px auto;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        #searchInput {
+            width: 100%;
+            border: none;
+            border-bottom: var(--border-thin);
+            padding: 15px 0;
+            font-size: 1.2rem;
+            font-family: inherit;
+            letter-spacing: 0.1em;
+            outline: none;
+            text-align: center;
+            background: transparent;
+        }
+
+        #searchInput::placeholder {
+            color: #999;
+            font-style: italic;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .cta-links {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .text-btn {
+            background: none;
+            border: none;
+            border-bottom: 1px solid transparent;
+            cursor: pointer;
+            font-family: inherit;
+            letter-spacing: inherit;
+            margin: 0 10px;
+            padding: 2px 0;
+            transition: border-bottom 0.3s ease;
+        }
+
+        .text-btn:hover {
+            border-bottom: 1px solid var(--black);
+        }
+
+        /* Results & Sorting */
+        .results-section {
+            max-width: 1000px;
+            margin: 80px auto;
+            padding: 0 20px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: var(--border-thick);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+
+        .quick-summary {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-style: italic;
+        }
+
+        .solid-btn {
+            background-color: var(--black);
+            color: var(--white);
+            border: none;
+            padding: 12px 24px;
+            font-family: inherit;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            margin-left: 10px;
+            border-radius: 0;
+            transition: opacity 0.3s;
+        }
+
+        .solid-btn:hover {
+            opacity: 0.8;
+        }
+
+        /* Data Rows */
+        .data-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.5fr 1.5fr;
+            border-bottom: var(--border-thin);
+            padding: 30px 0;
+            align-items: center;
+        }
+
+        .data-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .data-meta {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #555;
+        }
+
+        .data-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        /* Progress Bar */
+        .bar-wrap {
+            width: 100%;
+            height: 4px;
+            background-color: #EEE;
+            margin-top: 10px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background-color: var(--black);
+        }
+
+        .loading-marker {
+            text-align: center;
+            padding: 40px;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            color: #999;
+        }
+
+        /* Footer */
+        .main-footer {
+            border-top: var(--border-thick);
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 100px;
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <h1>THE CAPITAL 2016</h1>
+        <p class="subtitle">Decoding the Price of Power</p>
+    </header>
+
+    <section class="map-section">
+        <h2 class="section-title">The Geography of Power</h2>
+        <p class="section-subtitle">SELECT A REGION</p>
+        <div id="taiwanMap" class="map-container"></div>
+    </section>
+
+    <section class="search-section">
+        <input type="text" id="searchInput" placeholder="Enter Location / 輸入縣市地區">
+        <div class="cta-links">
+            <span class="cta-label">Quick Search:</span>
+            <button class="text-btn" onclick="quickSearch('台北市')">台北市</button>
+            <button class="text-btn" onclick="quickSearch('新北市')">新北市</button>
+            <button class="text-btn" onclick="quickSearch('高雄市')">高雄市</button>
+        </div>
+    </section>
+
+    <section id="resultsAnchor" class="results-section">
+        <div class="controls">
+            <div id="quickSummary" class="quick-summary">Found 0 Candidates</div>
+            <div class="sort-buttons">
+                <button class="solid-btn" onclick="sortData('total')">Sort by Total Income</button>
+                <button class="solid-btn" onclick="sortData('corporate')">Sort by Corporate %</button>
+            </div>
+        </div>
+        
+        <div id="resultsContainer">
+            </div>
+        <div id="loadingMarker" class="loading-marker">Scroll for more...</div>
+    </section>
+
+    <footer class="main-footer">
+        <p>© 2016 ARCHIVE. STRICTLY CONFIDENTIAL.</p>
+    </footer>
+
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let displayCount = 20;
+        const CHUNK_SIZE = 20;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initMap(); // 畫地圖
+            loadCSVData(); // 載入數據
+        });
+
+        // 1. 初始化台灣地圖
+        function initMap() {
+            const width = 500;
+            const height = 600;
+
+            const svg = d3.select("#taiwanMap")
+                .append("svg")
+                .attr("viewBox", `0 0 ${width} ${height}`)
+                .attr("preserveAspectRatio", "xMidYMid meet");
+
+            const projection = d3.geoMercator()
+                .center([121, 23.6]) 
+                .scale(7000)         
+                .translate([width / 2, height / 2]);
+
+            const path = d3.geoPath().projection(projection);
+
+            // 讀取 g0v 的開源台灣 GeoJSON
+            d3.json("https://raw.githubusercontent.com/g0v/twgeojson/master/json/twCounty2010.geo.json")
+                .then(geoData => {
+                    svg.selectAll("path")
+                        .data(geoData.features)
+                        .enter()
+                        .append("path")
+                        .attr("class", "county")
+                        .attr("d", path)
+                        .on("click", function(event, d) {
+                            const countyName = d.properties.name || d.properties.COUNTYNAME; 
+                            
+                            // 地圖視覺反饋
+                            d3.selectAll(".county").classed("active", false);
+                            d3.select(this).classed("active", true);
+
+                            // 連動搜尋與滑動
+                            quickSearch(countyName);
+                            document.getElementById('resultsAnchor').scrollIntoView({ behavior: 'smooth' });
+                        })
+                        .append("title")
+                        .text(d => d.properties.name || d.properties.COUNTYNAME);
+                })
+                .catch(error => {
+                    console.error("地圖載入失敗:", error);
+                    document.getElementById("taiwanMap").innerHTML = "<p>Map data unavailable.</p>";
+                });
+        }
+
+        // 2. 載入 CSV 數據
+        function loadCSVData() {
+            d3.csv("A05_basic_all.csv").then(data => {
+                allData = data.map(d => ({
+                    ...d,
+                    總收入: parseInt(d.總收入.replace(/,/g, ''), 10) || 0,
+                    營利事業捐贈比例: parseFloat(d.營利事業捐贈比例.replace('%', '')) || 0
+                }));
+                
+                filteredData = [...allData];
+                updateSummary();
+                renderData();
+            }).catch(error => {
+                console.error("Error loading CSV: ", error);
+                document.getElementById('quickSummary').innerText = "Data Archive Unavailable.";
+            });
+        }
+
+        // 3. 搜尋與過濾邏輯
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            filterAndRender(e.target.value.trim());
+        });
+
+        function quickSearch(location) {
+            searchInput.value = location;
+            filterAndRender(location);
+        }
+
+        function filterAndRender(query) {
+            if (query === "") {
+                filteredData = [...allData];
+                d3.selectAll(".county").classed("active", false); // 清除地圖選取
+            } else {
+                filteredData = allData.filter(d => d.地區.includes(query));
+            }
+            displayCount = CHUNK_SIZE;
+            updateSummary();
+            renderData();
+        }
+
+        // 4. 排序邏輯
+        function sortData(criteria) {
+            if (criteria === 'total') {
+                filteredData.sort((a, b) => b.總收入 - a.總收入);
+            } else if (criteria === 'corporate') {
+                filteredData.sort((a, b) => b.營利事業捐贈比例 - a.營利事業捐贈比例);
+            }
+            displayCount = CHUNK_SIZE; 
+            renderData();
+        }
+
+        function updateSummary() {
+            const query = searchInput.value.trim();
+            const locationText = query ? `for ${query}` : 'in Total';
+            document.getElementById('quickSummary').innerText = `Found ${filteredData.length} Candidates ${locationText}`;
+        }
+
+        // 5. 渲染數據列表
+        function renderData() {
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = ''; 
+
+            const dataToRender = filteredData.slice(0, displayCount);
+
+            dataToRender.forEach(d => {
+                const row = document.createElement('div');
+                row.className = 'data-row';
+                
+                const formattedIncome = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 0
+                }).format(d.總收入).replace('$', '$ ');
+
+                row.innerHTML = `
+                    <div>
+                        <div class="data-name">${d.姓名}</div>
+                        <div class="data-meta">${d.地區}</div>
+                    </div>
+                    <div>
+                        <div class="data-meta" style="margin-bottom: 5px;">Party</div>
+                        <div style="font-weight: 700;">${d.推薦政黨}</div>
+                    </div>
+                    <div>
+                        <div class="data-meta" style="margin-bottom: 5px;">Total Income</div>
+                        <div class="data-value">${formattedIncome}</div>
+                    </div>
+                    <div>
+                        <div class="data-meta" style="margin-bottom: 5px;">Corporate Donors (${d.營利事業捐贈比例}%)</div>
+                        <div class="bar-wrap">
+                            <div class="bar-fill" style="width: ${d.營利事業捐贈比例}%;"></div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            // 控制 Loading 提示字
+            const marker = document.getElementById('loadingMarker');
+            marker.style.display = (displayCount >= filteredData.length) ? 'none' : 'block';
+        }
+
+        // 6. Infinite Scroll (滾動載入)
+        window.addEventListener('scroll', () => {
+            const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+            if (scrollTop + clientHeight >= scrollHeight - 100) {
+                if (displayCount < filteredData.length) {
+                    displayCount += CHUNK_SIZE;
+                    renderData();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
