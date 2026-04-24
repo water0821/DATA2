@@ -123,3 +123,65 @@ window.addEventListener('scroll', () => {
         }
     }
 });
+<section class="map-section">
+        <h2 class="section-title">The Geography of Power</h2>
+        <p class="section-subtitle">SELECT A REGION</p>
+        <div id="taiwanMap" class="map-container"></div>
+    </section>
+
+// --- Map Initialization ---
+function initMap() {
+    const width = 500;
+    const height = 600;
+
+    // 建立 SVG 畫布
+    const svg = d3.select("#taiwanMap")
+        .append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("preserveAspectRatio", "xMidYMid meet");
+
+    // 設定台灣地圖的投影比例與中心點
+    const projection = d3.geoMercator()
+        .center([121, 23.6]) // 台灣中心經緯度
+        .scale(7000)         // 放大倍率
+        .translate([width / 2, height / 2]);
+
+    const path = d3.geoPath().projection(projection);
+
+    // 讀取開源的台灣 GeoJSON 資料 (這裡使用 g0v 提供的穩定版)
+    d3.json("https://raw.githubusercontent.com/g0v/twgeojson/master/json/twCounty2010.geo.json")
+        .then(geoData => {
+            svg.selectAll("path")
+                .data(geoData.features)
+                .enter()
+                .append("path")
+                .attr("class", "county")
+                .attr("d", path)
+                .on("click", function(event, d) {
+                    // d.properties.name 會抓到如 "台北市", "高雄市"
+                    const countyName = d.properties.name || d.properties.COUNTYNAME; 
+                    
+                    // 視覺反饋：移除所有 active，給當前點擊的加上 active
+                    d3.selectAll(".county").classed("active", false);
+                    d3.select(this).classed("active", true);
+
+                    // 觸發已寫好的搜尋功能
+                    quickSearch(countyName);
+                    
+                    // 讓頁面平滑滾動到結果區塊
+                    document.getElementById('resultsContainer').scrollIntoView({ behavior: 'smooth' });
+                })
+                .append("title") // 加入原生的滑鼠懸停提示
+                .text(d => d.properties.name || d.properties.COUNTYNAME);
+        })
+        .catch(error => {
+            console.error("地圖載入失敗:", error);
+            document.getElementById("taiwanMap").innerHTML = "<p style='color:#999; font-style:italic;'>Map data unavailable.</p>";
+        });
+}
+
+// 記得在最上面的 DOMContentLoaded 裡面加上 initMap() 呼叫：
+// document.addEventListener("DOMContentLoaded", () => {
+//     initMap(); // 新增這一行
+//     d3.csv("A05_basic_all.csv").then(...)
+// });
